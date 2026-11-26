@@ -1,0 +1,75 @@
+# L'immagine base si prende da Docker Hub e non dalla Sylabs Cloud Library: con
+# "Bootstrap: library" il build contatta cloud.sylabs.io, che da diverse reti non e'
+# raggiungibile, e riesce solo se l'immagine e' gia' nella cache locale di chi lo lancia.
+Bootstrap: docker
+From: ubuntu:22.04
+
+# Il percorso di requirements.lock e' relativo alla cartella src/reproducibility/containers/, da
+# cui va lanciato il build (vedi README).
+%files
+    requirements.lock /opt/requirements.lock
+
+%environment
+    # Isola il container dai pacchetti Python installati nella home di chi lo usa: Singularity
+    # monta la home, e senza questa variabile Python caricherebbe per primi i pacchetti in
+    # ~/.local, sostituendo in silenzio le versioni dell'immagine.
+    export PYTHONNOUSERSITE=1
+
+%post
+    ln -fs /usr/share/zoneinfo/Europe/Rome /etc/localtime
+    export DEBIAN_FRONTEND=noninteractive
+    echo "export DEBIAN_FRONTEND=noninteractive" >> $SINGULARITY_ENVIRONMENT
+
+    # 🔹 Pulisci installazioni locali potenzialmente conflittuali
+    rm -rf /root/.local/lib/python3.10/site-packages/torch*
+    rm -rf /root/.local/lib/python3.10/site-packages/torchvision*
+
+    # 🔹 Aggiorna sistema e installa pacchetti base
+    apt update -y && apt upgrade -y
+    apt install -y python3.10 python3-pip python-is-python3 python3-venv \
+                   vim git libxrender1 libcairo2 libcairo2-dev libffi-dev libcurl4 
+    
+    apt install -y libjpeg-dev zlib1g-dev libpng-dev libopenblas-dev
+
+    # 🔹 (AGGIUNTA) Stdlib Python completa + certificati (robustezza per mlflow server)
+    apt install -y python3-full libpython3.10-stdlib ca-certificates
+
+
+    # 🔹 Aggiorna pip (versioni fissate: incidono su come vengono risolti e scelti i pacchetti)
+    python3 -m pip install --upgrade pip==26.2.1 setuptools==84.0.0 wheel==0.48.0
+
+    # 🔹 Installa l'ambiente Python con le versioni esatte di requirements.lock.
+    # Tutte le dipendenze, anche quelle indirette, sono fissate: senza, ogni build scaricherebbe
+    # le ultime versioni disponibili in quel momento (per esempio di numba, da cui dipende UMAP)
+    # e il container cambierebbe nel tempo. torch, torchvision e torchaudio provengono
+    # dall'indice CUDA 12.1 di PyTorch, tutto il resto da PyPI.
+    pip install --no-cache-dir -r /opt/requirements.lock \
+      --extra-index-url https://download.pytorch.org/whl/cu121
+
+    # 🔹 EdgeSHAPer: il passo di attribuzione usa il codice degli autori, che non e' su PyPI.
+    # Si clona a un commit fissato e si mette sul PYTHONPATH; il modulo si importa come
+    # "edgeshaper" da /opt/EdgeSHAPer/src.
+    git clone https://github.com/AndMastro/EdgeSHAPer.git /opt/EdgeSHAPer
+    git -C /opt/EdgeSHAPer checkout 5aa45cf99844125613485455ea507df57ed1fc7e
+    echo "export PYTHONPATH=/opt/EdgeSHAPer/src:\$PYTHONPATH" >> $SINGULARITY_ENVIRONMENT
+
+    # rdkit_heatmaps e' una dipendenza di import di edgeshaper.py (serve solo alle sue
+    # funzioni di disegno, che qui non si usano) e non e' su PyPI. Va installata con
+    # --no-deps: senza quel vincolo pip tira dentro un numpy piu' recente di quello fissato
+    # in requirements.lock, che lo oscura e rompe l'ABI compilata di pandas.
+    pip install --no-cache-dir --no-deps git+https://github.com/c-feldmann/rdkit_heatmaps
+
+    # 🔹 Verifica che l'ambiente installato sia coerente
+    pip check
+
+    # 🔹 Verifica che EdgeSHAPer sia importabile con l'ambiente appena costruito
+    PYTHONPATH=/opt/EdgeSHAPer/src python3 -c "from edgeshaper import Edgeshaper; print('EdgeSHAPer OK')"
+
+%runscript
+    # Di default il container esegue results_reproduction.py: applica il modello pretrained
+    # alla libreria di composti TCMBANK e fa il matching dei frammenti col database TCM.
+    # Risale alla radice del repo a partire dalla posizione del .sif stesso
+    # (src/reproducibility/containers/), cosi' funziona indipendentemente dalla cwd da cui viene
+    # lanciato "singularity run".
+    cd "$(dirname "$SINGULARITY_CONTAINER")/../../.."
+    exec python3 src/reproducibility/results_reproduction.py "$@"

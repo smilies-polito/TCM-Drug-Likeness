@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/418303031868899849/64582bc220f74718892ff3eb63ba31a0/artifacts
+end_time: 1747084814234
+entry_point_name: ''
+experiment_id: '418303031868899849'
+lifecycle_stage: active
+run_id: 64582bc220f74718892ff3eb63ba31a0
+run_name: painted-grub-786
+run_uuid: 64582bc220f74718892ff3eb63ba31a0
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1746716628405
+status: 3
+tags: []
+user_id: rsmeriglio

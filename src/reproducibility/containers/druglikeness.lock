@@ -1,0 +1,57 @@
+# Versioni esatte dei pacchetti Python del container druglikeness.def, usato per D-GCAN e
+# GeneralDL / SpecDL-ZINC nel benchmark (src/reproducibility/benchmark/run_benchmark.sh).
+#
+# Generato il 2026-10-05 con 'pip freeze' dall'immagine druglikeness.sif con cui il benchmark
+# e' stato rigenerato al byte il 2026-10-02, letta senza i pacchetti della home
+# (PYTHONNOUSERSITE=1). pip, setuptools e wheel sono fissati direttamente nel .def.
+# torch e torchvision (+cu117) vengono dall'indice di PyTorch, tutto il resto da PyPI.
+aiohttp==3.8.6
+aiosignal==1.3.1
+async-timeout==4.0.3
+asynctest==0.13.0
+attrs==24.2.0
+certifi==2026.6.17
+charset-normalizer==3.4.9
+cycler==0.11.0
+datasets==2.6.1
+dill==0.3.5.1
+filelock==3.12.2
+fonttools==4.38.0
+frozenlist==1.3.3
+fsspec==2023.1.0
+huggingface-hub==0.16.4
+idna==3.10
+importlib-metadata==6.7.0
+joblib==1.3.2
+kiwisolver==1.4.5
+loguru==0.7.3
+matplotlib==3.5.3
+multidict==6.0.5
+multiprocess==0.70.13
+numpy==1.21.5
+packaging==24.0
+pandas==1.3.5
+Pillow==9.5.0
+pyarrow==12.0.1
+pyparsing==3.1.4
+python-dateutil==2.9.0.post0
+pytz==2026.2
+PyYAML==5.4.1
+rdkit==2023.3.2
+regex==2024.4.16
+requests==2.31.0
+responses==0.18.0
+scikit-learn==0.23.2
+scipy==1.7.3
+six==1.17.0
+threadpoolctl==3.1.0
+tokenizers==0.13.3
+torch==1.13.1+cu117
+torchvision==0.14.1+cu117
+tqdm==4.68.2
+transformers==4.24.0
+typing_extensions==4.7.1
+urllib3==2.0.7
+xxhash==3.6.0
+yarl==1.9.4
+zipp==3.15.0

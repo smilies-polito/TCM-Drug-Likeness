@@ -1,0 +1,54 @@
+Bootstrap: docker
+From: python:3.7-slim
+
+# Container per i modelli esterni del benchmark: D-GCAN (riaddestrato) e GeneralDL /
+# SpecDL-ZINC (pesi pubblicati). Usato da src/reproducibility/benchmark/run_benchmark.sh.
+# Il percorso di druglikeness.lock e' relativo alla cartella src/reproducibility/containers/, da
+# cui va lanciato il build (vedi README).
+
+%labels
+    Author Riccardo
+    Version 2.0
+    Description GPU-ready container for the D-GCAN and GeneralDL benchmark
+
+%files
+    druglikeness.lock /opt/druglikeness.lock
+
+%environment
+    export PYTHONUNBUFFERED=1
+    export PYTHONDONTWRITEBYTECODE=1
+    export DEBIAN_FRONTEND=noninteractive
+    # Isola il container dai pacchetti Python installati nella home di chi lo usa: Singularity
+    # monta la home, e senza questa variabile Python caricherebbe per primi i pacchetti in
+    # ~/.local, sostituendo in silenzio le versioni dell'immagine.
+    export PYTHONNOUSERSITE=1
+
+%post
+    apt-get update && apt-get install -y \
+        build-essential \
+        wget \
+        curl \
+        git \
+        libgl1 \
+        libglib2.0-0 \
+        libxext6 \
+        libsm6 \
+        libxrender1 \
+        libjpeg-dev \
+        libpng-dev \
+        ca-certificates \
+        && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+    # Versioni fissate: incidono su come vengono risolti e scelti i pacchetti
+    pip install --upgrade pip==24.0 setuptools==68.0.0 wheel==0.42.0
+
+    # Ambiente Python con le versioni esatte di druglikeness.lock, dipendenze indirette comprese.
+    # torch e torchvision (CUDA 11.7) provengono dall'indice di PyTorch, tutto il resto da PyPI.
+    pip install --no-cache-dir -r /opt/druglikeness.lock \
+        -f https://download.pytorch.org/whl/torch_stable.html
+
+    # Verifica che l'ambiente installato sia coerente
+    pip check
+
+%runscript
+    exec python "$@"

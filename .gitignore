@@ -1,0 +1,39 @@
+# results/ contiene gli output rigenerabili delle pipeline (predizioni, cache delle molecole,
+# figure, benchmark): non si versionano. Fa eccezione il modello pubblicato, che non e'
+# rigenerabile in modo identico e serve a tutte le riproduzioni.
+results/*
+!results/trained_model/
+
+# Eccezioni: i due risultati che NON sono praticamente rigenerabili.
+#  - edgeshaper_full.csv: il valore di Shapley di ogni arco di ogni molecola. Rifarlo costa
+#    ~160 ore di CPU (82 milioni di valutazioni del modello), e da questo file si ricostruiscono
+#    in pochi minuti frammenti, fingerprint, clustering e medoidi.
+#  - tcm_edgeshaper/: medoidi uniti alle voci TM-MC e l'esito dello screening della letteratura,
+#    che non e' riproducibile in modo deterministico.
+# git non entra in una cartella esclusa, quindi results/explain va prima riammessa, poi
+# riesclusa nel suo contenuto, e solo dopo si riammettono i singoli percorsi.
+!results/explain/
+results/explain/*
+!results/explain/edgeshaper_full.csv
+!results/explain/tcm_edgeshaper/
+
+*.png
+!results/explain/tcm_edgeshaper/*.png
+*.sif
+**/__pycache__/
+
+# Codice di attribuzione non piu' usato per i risultati pubblicati: altri metodi provati
+# (attenzione, occlusione, gradienti integrati, implementazione propria dello Shapley sugli
+# archi) e gli script di confronto e diagnosi. Tenuto fuori dal repository ma non cancellato.
+archive/
+
+# Sorgenti del manoscritto e materiale di lavoro: non fanno parte della pipeline.
+PAPER/
+tmp_from_claude_skill/
+*.csv.orig
+attention_report.html
+paper-elsevier-*-comments-*.csv
+
+# Checkout di terze parti (EdgeSHAPer e la sua dipendenza rdkit_heatmaps). Nel container
+# arrivano da TCM.def; qui servono solo per eseguire fuori dal container.
+vendor/
